@@ -1,0 +1,2 @@
+# ignores all pycache
+__pycache__/
