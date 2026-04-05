@@ -1,4 +1,5 @@
 import requests
+import json
 
 
 class Requester():
@@ -10,8 +11,6 @@ class Requester():
         endpoint = self.endpoint_base + sufix_endpoint
         response = requests.get(endpoint)
 
-        print(endpoint)
-
         return response.text
 
 
@@ -20,33 +19,119 @@ class LimitlessPTCGRequester(Requester):
                  endpoint_base="https://play.limitlesstcg.com/api"):
         super().__init__(endpoint_base=endpoint_base)
 
-    def _get_tornaments(self, game="PTCG", format="STANDARD"):
+    def _get_tornaments(self, game="PTCG", format="STANDARD", page=1):
         sufix_endpoint = \
-            "/tournaments?game={}&format={}".format(
-                game, format
+            "/tournaments?game={}&format={}&page={}".format(
+                game, format, str(page)
             )
 
         return self.get_req(sufix_endpoint)
 
-    def update_database(self, force_full_update=False):
-        # connect to database (create if don't exist)
+    def _check_if_last_page(self, resp_list, last_update):
+        last_updt_year = int(last_update[0:4])
+        last_updt_month = int(last_update[5:7])
+        last_updt_day = int(last_update[8:10])
 
-        # if (force_full_update == False) read database
-        # metadata to check when was the last update
+        for tournament in resp_list:
+            tournament_date = tournament["date"]
 
-        # get tournaments that weren't saved
-        # for each tournament:
-        #   save these info:
-        #     - date
-        #     - player quantity
-        #   get all deckslists and save these info for each:
-        #     - tournament id
-        #     - decklist
-        #     - standing
-        #     - wins
-        #     - losses
-        #     - ties
+            curr_updt_year = int(tournament_date[0:4])
+            curr_updt_month = int(tournament_date[5:7])
+            curr_updt_day = int(tournament_date[8:10])
 
-        # the decklists are saved in other collection
+            if curr_updt_year < last_updt_year:
+                return True
+            elif (curr_updt_year == last_updt_year) &\
+                 (curr_updt_month < last_updt_month):
+                return True
+            elif (curr_updt_year == last_updt_year) &\
+                 (curr_updt_month == last_updt_month) &\
+                 (curr_updt_day < last_updt_day):
+                return True
 
-        pass
+        return False
+
+    def _filter_tournament_date(self, resp_list, last_update):
+        last_updt_year = int(last_update[0:4])
+        last_updt_month = int(last_update[5:7])
+        last_updt_day = int(last_update[8:10])
+
+        aux_list = []
+
+        for tournament in resp_list:
+            tournament_date = tournament["date"]
+
+            curr_updt_year = int(tournament_date[0:4])
+            curr_updt_month = int(tournament_date[5:7])
+            curr_updt_day = int(tournament_date[8:10])
+
+            if curr_updt_year < last_updt_year:
+                continue
+            elif (curr_updt_year == last_updt_year) &\
+                 (curr_updt_month < last_updt_month):
+                continue
+            elif (curr_updt_year == last_updt_year) &\
+                 (curr_updt_month == last_updt_month) &\
+                 (curr_updt_day < last_updt_day):
+                continue
+
+            aux_list += [tournament]
+
+        return aux_list
+
+    def _filter_tournament_opendecklists(self, tour_list):
+        aux_list = []
+
+        for tournament in tour_list:
+            tour_id = tournament["id"]
+            sufix_endpoint = "/tournaments/{}/details".format(
+                tour_id)
+
+            details_str = self.get_req(sufix_endpoint)
+            details_dict = json.loads(details_str)
+
+            is_opendecklist = details_dict["decklists"]
+
+            if is_opendecklist:
+                aux_list += [tournament]
+
+        return aux_list
+
+    def get_data(self, force_full_update=True, last_update=None):
+        if not force_full_update:
+            if last_update is None:
+                raise ValueError
+        else:
+            # first tournament legal post G-rotation
+            last_update = "2026-03-27"
+
+        last_update_reached = False
+        curr_page = 1
+        all_tournaments_list = []
+        while not last_update_reached:
+            resp_json = self._get_tornaments(page=curr_page)
+            resp_list = json.loads(resp_json)
+
+            if self._check_if_last_page(resp_list, last_update):
+                filtered_list = self._filter_tournament_date(resp_list,
+                                                             last_update)
+                all_tournaments_list += filtered_list
+                last_update_reached = True
+            else:
+                all_tournaments_list += resp_list
+                curr_page += 1
+
+        filtered_list = self._filter_tournament_opendecklists(
+            all_tournaments_list)
+
+        for tournament in filtered_list:
+            tournament_id = tournament["id"]
+            sufix_endpoint = "/tournaments/{}/standings".format(
+                tournament_id
+            )
+
+            standings = self.get_req(sufix_endpoint)
+
+            tournament["standings"] = standings
+
+        return filtered_list
