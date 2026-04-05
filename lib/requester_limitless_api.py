@@ -20,6 +20,9 @@ class LimitlessPTCGRequester(Requester):
         super().__init__(endpoint_base=endpoint_base)
 
     def _get_tornaments(self, game="PTCG", format="STANDARD", page=1):
+        """Sends a request to get tournament data.
+        """
+
         sufix_endpoint = \
             "/tournaments?game={}&format={}&page={}".format(
                 game, format, str(page)
@@ -28,6 +31,9 @@ class LimitlessPTCGRequester(Requester):
         return self.get_req(sufix_endpoint)
 
     def _check_if_last_page(self, resp_list, last_update):
+        """Check if the page have tournaments from before last update
+        """
+
         last_updt_year = int(last_update[0:4])
         last_updt_month = int(last_update[5:7])
         last_updt_day = int(last_update[8:10])
@@ -52,6 +58,9 @@ class LimitlessPTCGRequester(Requester):
         return False
 
     def _filter_tournament_date(self, resp_list, last_update):
+        """Filters tournaments from before last update from a list
+        """
+
         last_updt_year = int(last_update[0:4])
         last_updt_month = int(last_update[5:7])
         last_updt_day = int(last_update[8:10])
@@ -80,6 +89,9 @@ class LimitlessPTCGRequester(Requester):
         return aux_list
 
     def _filter_tournament_opendecklists(self, tour_list):
+        """Returns only the open descklist tournaments from a list
+        """
+
         aux_list = []
 
         for tournament in tour_list:
@@ -98,6 +110,12 @@ class LimitlessPTCGRequester(Requester):
         return aux_list
 
     def get_data(self, force_full_update=True, last_update=None):
+        """Get tournament data, including standings.
+        If force_full_update=True, gets data from all tournaments in
+        the format. Otherwise, gets data from tournaments that occured
+        on the last_update date and after.
+        """
+
         if not force_full_update:
             if last_update is None:
                 raise ValueError
