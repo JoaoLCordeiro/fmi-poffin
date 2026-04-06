@@ -125,6 +125,18 @@ class LimitlessPTCGRequester(Requester):
 
         return aux_list
 
+    def _filter_null_standings(self, standings):
+        """Filters standings with placing == None
+        """
+
+        aux_list = []
+
+        for standing in standings:
+            if standing["placing"] is not None:
+                aux_list += [standing]
+
+        return aux_list
+
     def get_data(self, force_full_update=True, last_update=None):
         """Get tournament data, including standings.
         If force_full_update=True, gets data from all tournaments in
@@ -165,7 +177,12 @@ class LimitlessPTCGRequester(Requester):
             )
 
             standings = self.get_req(sufix_endpoint)
+            standings_dict = json.loads(standings)
 
-            tournament["standings"] = standings
+            filtered_standings = self._filter_null_standings(
+                standings_dict
+            )
+
+            tournament["standings"] = filtered_standings
 
         return filtered_list
