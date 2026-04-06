@@ -11,7 +11,7 @@ class PoffinParser():
         for tournament in tour_req:
             parsed_tour = {}
 
-            parsed_tour["id"] = tournament["id"]
+            parsed_tour["_id"] = str(tournament["id"])
             parsed_tour["date"] = tournament["date"]
             parsed_tour["players"] = tournament["players"]
 
@@ -33,6 +33,11 @@ class PoffinParser():
                 parsed_decklist["placing"] = player["placing"]
                 parsed_decklist["record"] = player["record"]
                 parsed_decklist["decklist"] = player["decklist"]
+
+                id = parsed_decklist["id"]
+                placing = parsed_decklist["placing"]
+
+                parsed_decklist["_id"] = str(id) + "_" + str(placing)
 
                 aux_list += [parsed_decklist]
 
