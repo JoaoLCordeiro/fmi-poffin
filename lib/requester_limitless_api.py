@@ -1,15 +1,31 @@
 import requests
 import json
 
+from requests.adapters import HTTPAdapter
+from urllib3.util import Retry
+
 
 class Requester():
     def __init__(self,
                  endpoint_base="https://play.limitlesstcg.com/api"):
         self.endpoint_base = endpoint_base
 
+        self.retry_strategy = Retry(
+            total=5,
+            status_forcelist=[429, 500, 502, 503, 504],
+            backoff_factor=2,
+            allowed_methods=["GET"]
+        )
+        self.adapter = HTTPAdapter(
+            max_retries=self.retry_strategy)
+
+        self.session = requests.Session()
+        self.session.mount("https://", self.adapter)
+        self.session.mount("http://", self.adapter)
+
     def get_req(self, sufix_endpoint):
         endpoint = self.endpoint_base + sufix_endpoint
-        response = requests.get(endpoint)
+        response = self.session.get(endpoint)
 
         return response.text
 
