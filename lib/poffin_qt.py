@@ -1,8 +1,8 @@
 from PyQt6.QtWidgets import QMainWindow
 from PyQt6.QtCore import QThread
-from PyQt6.QtGui import QAction
 from ui.mainwindow import Ui_MainWindow
 from ui.configwindow import Ui_ConfigWindow
+from manager import PoffinManager
 
 
 class Worker(QThread):
@@ -37,6 +37,9 @@ class PoffinConfigQt(QMainWindow, Ui_ConfigWindow):
         super(PoffinConfigQt, self).__init__()
         self.setupUi(self)
 
+    def set_all_cards(self, all_cards):
+        self.lineEdit.setAllCards(all_cards)
+
 
 class PoffinQt(QMainWindow, Ui_MainWindow):
     def __init__(self):
@@ -50,3 +53,8 @@ class PoffinQt(QMainWindow, Ui_MainWindow):
         self.menuSettings.triggered.connect(
             self.config_window.show
         )
+
+        self.manager = PoffinManager()
+        all_cards = self.manager.get_all_cards_from_db()
+
+        self.config_window.set_all_cards(all_cards)

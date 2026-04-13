@@ -1,6 +1,6 @@
-from . import database
-from . import requester_limitless_api
-from . import parser
+import database
+import requester_limitless_api
+import parser
 
 from datetime import date
 
@@ -100,3 +100,6 @@ class PoffinManager():
         # updates last update metadata
         today = str(date.today())
         self.set_last_update(today)
+
+    def get_all_cards_from_db(self):
+        return self.database.get_all_cards()
