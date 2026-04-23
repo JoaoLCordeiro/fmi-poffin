@@ -4,6 +4,15 @@ class PoffinParser():
         pass
 
     def tour_req_to_tour_data(self, tour_req):
+        """ Get tournament request response and returns it
+        parsed to get stored in database.
+
+        Returned format:
+            _id: tournament id
+            date: date of the tournament
+            players: number of pplayers in tournament
+        """
+
         if type(tour_req) is not list:
             raise ValueError
 
@@ -20,6 +29,17 @@ class PoffinParser():
         return aux_list
 
     def tour_req_to_decklists_data(self, tour_req):
+        """ Get standings request response and returns it
+        parsed to get stored in database.
+
+        Returned format:
+            _id: tournament id + '_' + placing in tournament
+            id: tournament id
+            placing: decklist placing in tournament
+            record: wins, losses and ties
+            decklist: all cards in decklist
+        """
+
         if type(tour_req) is not list:
             raise ValueError
 
